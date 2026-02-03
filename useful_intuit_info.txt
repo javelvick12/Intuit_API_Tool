@@ -1,0 +1,40 @@
+DELETE BEFORE SUBMISSION
+
+
+
+#################################################################################
+Intuit Oauth Documentation <https://pypi.org/project/intuit-oauth/>:
+ 
+The official Python client library for working with Intuit APIs. The AuthClient object response can be used for the Intuit UserInfo API, QuickBooks Accounting API, and QuickBooks Payments API.
+
+This library supports:
+    Raising authorization requests
+    Requesting OAuth2 bearer (access) tokens
+    Refreshing OAuth2 tokens
+    Revoking OAuth2 tokens
+    Validating ID tokens
+    Fetching profile attributes from UserInfo
+    Various utility methods
+    Migrating tokens from OAuth1.0 to OAuth2
+
+Install
+Using pip: $ pip install intuit-oauth
+
+Documentation
+Usage and reference documentation can be found at <oauth-pythonclient.readthedocs.io>
+
+Sample App
+A sample app for this library can be found on the <https://github.com/IntuitDeveloper/SampleOAuth2_UsingPythonClient>
+
+#################################################################################
+Intuit python-quickbooks <https://pypi.org/project/python-quickbooks/>:
+A Python 3 library for accessing the Quickbooks API. Complete rework of quickbooks-python.
+
+These instructions were written for a Django application. Make sure to change it to whatever framework/method you're using. You can find additional examples of usage in Integration tests folder.
+pip
+Installation
+    pip install python-quickbooks
+    QuickBooks OAuth
+    This library requires intuit-oauth. Follow the OAuth 2.0 Guide for installation and to get connected to QuickBooks API.
+
+Accessing the API...examples on the site! 

@@ -1,6 +1,12 @@
+########### Admin/Import/Etc ###########
 #Intuit Quickbooks CLI Parser by Jason Velvick and Jerome Althoff
-from intuitlib.client import AuthClient
-from intuitlib.enums import Scopes
+import authentication
+import data_management
+import user_management
+import utilities
+
+
+########### Deliverable ###########
 
 
 
@@ -8,6 +14,12 @@ from intuitlib.enums import Scopes
 
 
 
+########### Main ###########
+def main():
+    pass
+
+if __name__ == '__main__':
+    main()
 
 
 
