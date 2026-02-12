@@ -21,3 +21,9 @@ Licenses Involved:
         License: Apache 2.0
         Author: Intuit Inc
 ##############Anything else?##############
+
+
+20260212 - talked through the game plan. Focus:
+    1 - get hello world .net working
+    2 - set up initial authentication with testapp-1A
+    3 - get profit/loss ytd report
