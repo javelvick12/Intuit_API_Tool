@@ -1,12 +1,13 @@
 ########### Admin/Import/Etc ###########
 from intuitlib.client import AuthClient
+from intuitlib.exceptions import AuthClientError
 from quickbooks import *
 #from intuit.oauth.client import AuthClient #### I had to downloat intuitlin-oath library did you? #Yep.
-#from intuit.oauth.scopes import Scopes
-import utilities
+#from intuitlib.oath.scopes import Scopes
+from data_management import realm_id
 
 ########### Deliverable ###########S
-auth-token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwieC5vcmciOiJIMCJ9..9W_pWKhnsRsFlPxoLlcM8g.k90g5RitQL1jt9ytj0DhxYKw6AxH31qP4TE4sfssBBD2jmfJg6gm3TNsalpf9pnMm7_lBM_hzhiloLTJTF9v8bTtgGtj_j57n7dVUqqhl7kBZlek7uTToOlvY0-vNJm6YtpmBoiYno-0Qi14QkPzKSbeRbSctJtK6HAJm8obcIaH3Q8uLFiMtnFbyaFBOTObPTLjIVsS51x8am4h2OxqfuqulBIatOx31F6ZFo9gzzk6aowiqA5Mhpi5MyJmDOioZ4NL0IqqCmG6kUorYxms1mpNlsB2Hi8r4AePqZz9LWgI5EY1nwCDwm366xtA6S5Pn_bEyCjxlEptJFrwDQK2gahtMOlYoqmR7h7YtXGQ7OizWn4HcdUa-TzAOMQy1ABZUympL4aF1GuMFfSyTubh1NkFTKVSbDUIWasiMz5HkgNwac4z7Lyeg9zggViKG0-O0vamQPRcHoBfPiA66LV3iM4uv4Ihor64GPZ5CVG4Mxg.R3-AwiCHXfqcn-BObKW5zg"
+auth_token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwieC5vcmciOiJIMCJ9..9W_pWKhnsRsFlPxoLlcM8g.k90g5RitQL1jt9ytj0DhxYKw6AxH31qP4TE4sfssBBD2jmfJg6gm3TNsalpf9pnMm7_lBM_hzhiloLTJTF9v8bTtgGtj_j57n7dVUqqhl7kBZlek7uTToOlvY0-vNJm6YtpmBoiYno-0Qi14QkPzKSbeRbSctJtK6HAJm8obcIaH3Q8uLFiMtnFbyaFBOTObPTLjIVsS51x8am4h2OxqfuqulBIatOx31F6ZFo9gzzk6aowiqA5Mhpi5MyJmDOioZ4NL0IqqCmG6kUorYxms1mpNlsB2Hi8r4AePqZz9LWgI5EY1nwCDwm366xtA6S5Pn_bEyCjxlEptJFrwDQK2gahtMOlYoqmR7h7YtXGQ7OizWn4HcdUa-TzAOMQy1ABZUympL4aF1GuMFfSyTubh1NkFTKVSbDUIWasiMz5HkgNwac4z7Lyeg9zggViKG0-O0vamQPRcHoBfPiA66LV3iM4uv4Ihor64GPZ5CVG4Mxg.R3-AwiCHXfqcn-BObKW5zg"
 testapp_A1_id = 'ABchHIpAAjp78EEGlZi5dBPIm7K58g2TAU8H1lhRPV0SmdzsLS'
 testapp_A1_sec = 'hyAj3l4voHCgfV7L8yueq8KGe4zcKji6pzu3ar6j'
 
@@ -18,19 +19,28 @@ auth_client = AuthClient(
         redirect_uri='https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl', #provided by Intuit
     )
 
-scopes = [
-    'com.intuit.quickbooks.accounting'
-    ''
-]
-client = QuickBooks(
-    auth_client=auth_client,
-    refresh_token='REFRESH_TOKEN',
-    company_id='COMPANY_ID',
-    minorversion=69
-)
+scopes = {
+    'Accounting': 'com.intuit.quickbooks.accounting',
+    'Payments': 'com.intuit.quickbooks.payments'
+}
+
+def get_quickbooks(auth_client, realm_id, refresh_token): #not surewhat use use the quickbooks object for yet
+    try:
+        qb = QuickBooks(
+            auth_client=auth_client,
+            refresh_token=refresh_token,
+            company_id=realm_id,
+        )
+        # If library rotated token, persist latest token here:
+        # save_refresh_token(auth_client.refresh_token)
+        return qb
+    except AuthClientError as e:
+        print("OAuth refresh failed. Re-authorize and replace stored refresh token.")
+        raise
 ########### Main ###########
 def main():
-    pass
+    url = auth_client.get_authorization_url([scopes['Accounting']])
+    bearer_token = auth_client.get_bearer_token()
 
 if __name__ == '__main__':
     main()

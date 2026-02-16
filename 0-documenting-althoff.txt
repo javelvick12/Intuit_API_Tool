@@ -4,3 +4,8 @@
     * app details on personal private hub
     * app ID 
     * https://developer.intuit.com/app/developer/qbo/docs/get-started/build-your-first-app
+
+20260215
+    * Proposing that we use sqlite database to store secrets and IDs, but not before encrypting with pbdkf2 encryption.
+    * We can use SQLAlchemy and requests module as similar to Rinku's smartbulb app.
+    *  

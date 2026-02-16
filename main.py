@@ -1,29 +1,41 @@
 ########### Admin/Import/Etc ###########
 #Intuit Quickbooks CLI Parser by Jason Velvick and Jerome Althoff 
 from authentication import *
+from data_management import *
+from user_management import *
 from quickbooks import QuickBooks
-import data_management
-import user_management
-import utilities
-auth-token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwieC5vcmciOiJIMCJ9..9W_pWKhnsRsFlPxoLlcM8g.k90g5RitQL1jt9ytj0DhxYKw6AxH31qP4TE4sfssBBD2jmfJg6gm3TNsalpf9pnMm7_lBM_hzhiloLTJTF9v8bTtgGtj_j57n7dVUqqhl7kBZlek7uTToOlvY0-vNJm6YtpmBoiYno-0Qi14QkPzKSbeRbSctJtK6HAJm8obcIaH3Q8uLFiMtnFbyaFBOTObPTLjIVsS51x8am4h2OxqfuqulBIatOx31F6ZFo9gzzk6aowiqA5Mhpi5MyJmDOioZ4NL0IqqCmG6kUorYxms1mpNlsB2Hi8r4AePqZz9LWgI5EY1nwCDwm366xtA6S5Pn_bEyCjxlEptJFrwDQK2gahtMOlYoqmR7h7YtXGQ7OizWn4HcdUa-TzAOMQy1ABZUympL4aF1GuMFfSyTubh1NkFTKVSbDUIWasiMz5HkgNwac4z7Lyeg9zggViKG0-O0vamQPRcHoBfPiA66LV3iM4uv4Ihor64GPZ5CVG4Mxg.R3-AwiCHXfqcn-BObKW5zg"
-auth_code = 'XAB11771045729evRoojHWkpMu87KgVav2ZrnekQqXTvlfxi2f'
-refresh_token = 'RT1-118-H0-1779773174411jr6gmro0h9qwici4o'
-realm_id = '9341456224866626'
+from utilities import api_call, print_error
+import requests
 ########### Deliverable ###########
-client = QuickBooks(
-        auth_client=auth_client,
-        refresh_token=refresh_token,
-        company_id=realm_id,
-    )
 
-
-
+def refresh_call(auth_client, refresh_token):
+    try:
+        new_token = auth_client.refresh(refresh_token)
+        return new_token
+    except ValueError as e:
+        print_error(e, f="Refresh Call")
+        return None
 
 
 
 ########### Main ###########
 def main():
-    pass
+    base_url = 'https://sandbox-quickbooks.api.intuit.com'
+    endpoint = '/v3/company/{0}/companyinfo/{0}'.format(auth_client.realm_id)
+    url = '{0}/v3/company/{1}/companyinfo/{1}'.format(base_url, auth_client.realm_id)
+    auth_header = 'Bearer {0}'.format(auth_client.access_token)
+    headers = {
+    'Authorization': auth_header,
+    'Accept': 'application/json'
+    }
+
+    try:
+        response = api_call(base_url, endpoint, auth_client,  method='GET', headers=None, data=None)
+    except requests.exceptions.RequestException as e:
+        print_error(e, f="API Call")
+        return None
+    
+    refresh_call(auth_client, refresh_token=None)
 
 if __name__ == '__main__':
     main()
