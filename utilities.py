@@ -1,7 +1,12 @@
 ########### Admin/Import/Etc ###########
 # utilities to be used generally
-import requests
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
+import ssl, threading, webbrowser
 ########### Deliverable ###########
+HOST = "apps.qbparser-testing.test"
+PORT = 8443
+REDIRECT_URI = f"https://{HOST}:{PORT}/callback"
 #super helpful basic/standrad error code function
 def print_error(e, f="UNKNOWN"):
     """
@@ -11,16 +16,58 @@ def print_error(e, f="UNKNOWN"):
     print(e)
     print(type(e))
 
-#Main Oauth2 Object
-class OAuth2Config:
-    def __init__(self, issuer='', auth_endpoint='', token_endpoint='', userinfo_endpoint='', revoke_endpoint='',
-                 jwks_uri=''):
-        self.issuer = issuer
-        self.auth_endpoint = auth_endpoint
-        self.token_endpoint = token_endpoint
-        self.userinfo_endpoint = userinfo_endpoint
-        self.revoke_endpoint = revoke_endpoint
-        self.jwks_uri = jwks_uri
+def open_url(url: str) -> bool:
+    try:
+        return webbrowser.open_new_tab(url)
+    except Exception:
+        return False
+result = {"callback_url": None, "code": None, "state": None, "realmId": None}
+callback_received = threading.Event()
+class CallbackHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            parsed = urlparse(self.path)
+
+            if parsed.path != "/callback":
+                self.send_response(404)
+                self.end_headers()
+                return
+
+            qs = parse_qs(parsed.query)
+            result["code"] = qs.get("code", [None])[0]
+            result["state"] = qs.get("state", [None])[0]
+            result["realmId"] = qs.get("realmId", [None])[0]
+            result["callback_url"] = f"{REDIRECT_URI}?{parsed.query}"
+
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(b"OAuth received. You can close this tab.")
+
+            callback_received.set()
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+        def log_message(self, format, *args):
+            return
+        
+def create_https():
+    try:
+        httpd = HTTPServer((HOST, PORT), CallbackHandler)
+        #Context object to negotiate highest protocol version that both client and server can use
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.check_hostname = False
+        #Load private key and certificate
+        ssl_context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
+        #Init ssl socet and specify serer_side behaivor
+        httpd.socket(ssl_context.wrap_socket(httpd.socket, server_side=True))
+        httpd.serve_forever()
+        httpd.server_close()
+        return result
+    except Exception as e:
+        print_error(e, "create_https")
+        return None
+
+
+
 
 #call error with try/except within other functions
 #def function():
@@ -34,23 +81,7 @@ class OAuth2Config:
 #         return None
 
 
-def api_call(base_url, endpoint, auth_client, access_token=None, method='GET', headers=None, data=None ):
-    base_url = 'https://sandbox-quickbooks.api.intuit.com'
-    url = '{0}/v3/company/{1}/companyinfo/{1}'.format(base_url, auth_client.realm_id)
-    auth_header = 'Bearer {0}'.format(auth_client.access_token)
-    headers = {
-        'Authorization': auth_header,
-        'Accept': 'application/json'
-    }
-    if access_token:
-        response = auth_client.get_user_info(access_token=access_token)
-    else:
-        response = requests.get(url, headers=headers)
-    return response
-
 ########### Main ###########
-def main():
-    pass
 
 if __name__ == '__main__':
-    main()
+    create_https()

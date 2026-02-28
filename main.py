@@ -4,7 +4,7 @@ from authentication import *
 from data_management import *
 from user_management import *
 from quickbooks import QuickBooks
-from utilities import api_call, print_error
+from utilities import create_https, print_error
 import requests
 ########### Deliverable ###########
 
@@ -20,22 +20,18 @@ def refresh_call(auth_client, refresh_token):
 
 ########### Main ###########
 def main():
-    base_url = 'https://sandbox-quickbooks.api.intuit.com'
+    #create_https() #Initialize and enable https frontend for oauth connections
+    db = init_db()
+    auth_dict = authenticate(db)
     endpoint = '/v3/company/{0}/companyinfo/{0}'.format(auth_client.realm_id)
     url = '{0}/v3/company/{1}/companyinfo/{1}'.format(base_url, auth_client.realm_id)
-    auth_header = 'Bearer {0}'.format(auth_client.access_token)
+    auth_header = 'Bearer {0}'.format(bearer_token)
     headers = {
     'Authorization': auth_header,
     'Accept': 'application/json'
     }
 
-    try:
-        response = api_call(base_url, endpoint, auth_client,  method='GET', headers=None, data=None)
-    except requests.exceptions.RequestException as e:
-        print_error(e, f="API Call")
-        return None
-    
-    refresh_call(auth_client, refresh_token=None)
+    refresh_call(auth_dict['auth_client'], refresh_token=None)
 
 if __name__ == '__main__':
     main()

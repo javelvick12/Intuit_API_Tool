@@ -1,23 +1,140 @@
 ########### Admin/Import/Etc ###########
-import pandas as pd
 import sqlalchemy as sa
+from sqlalchemy.exc import SQLAlchemyError
 import os
-from passlib.hash import pbkdf2_sha256
-DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.db')
+import time
+from utilities import print_error
+DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.sqlite')
 #NOTE: This is insecure and will need to be moved to a database after being encyrpted (These tokens are also likely expired).
-auth_token = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwieC5vcmciOiJIMCJ9..9W_pWKhnsRsFlPxoLlcM8g.k90g5RitQL1jt9ytj0DhxYKw6AxH31qP4TE4sfssBBD2jmfJg6gm3TNsalpf9pnMm7_lBM_hzhiloLTJTF9v8bTtgGtj_j57n7dVUqqhl7kBZlek7uTToOlvY0-vNJm6YtpmBoiYno-0Qi14QkPzKSbeRbSctJtK6HAJm8obcIaH3Q8uLFiMtnFbyaFBOTObPTLjIVsS51x8am4h2OxqfuqulBIatOx31F6ZFo9gzzk6aowiqA5Mhpi5MyJmDOioZ4NL0IqqCmG6kUorYxms1mpNlsB2Hi8r4AePqZz9LWgI5EY1nwCDwm366xtA6S5Pn_bEyCjxlEptJFrwDQK2gahtMOlYoqmR7h7YtXGQ7OizWn4HcdUa-TzAOMQy1ABZUympL4aF1GuMFfSyTubh1NkFTKVSbDUIWasiMz5HkgNwac4z7Lyeg9zggViKG0-O0vamQPRcHoBfPiA66LV3iM4uv4Ihor64GPZ5CVG4Mxg.R3-AwiCHXfqcn-BObKW5zg"
-auth_code = 'XAB11771045729evRoojHWkpMu87KgVav2ZrnekQqXTvlfxi2f'
-refresh_token = 'RT1-118-H0-1779773174411jr6gmro0h9qwici4o'
-realm_id = '9341456224866626'
 ########### Deliverable ###########
 db = sa.create_engine(f'sqlite:///{DB_PATH}')
-
+metadata = sa.MetaData()
 client = sa.Table(
-    'Client', sa.MetaData(),
-    sa.Column('id', sa.Integer, primary_key=True),
+    'Client', metadata,
     sa.Column('client_id', sa.String(255), nullable=False),
     sa.Column('client_secret', sa.String(255), nullable=False),
-    sa.Column('access_token', sa.String(255), nullable=False),
-    sa.Column('refresh_token', sa.String(255), nullable=False),
-    sa.Column('realm_id', sa.String(255), nullable=False)
+    sa.Column('scope', sa.String(255), nullable=False),
+    sa.Column('RealmID', sa.String(255), nullable=False),
 )
+token = sa.Table(
+    'Token', metadata,
+    sa.Column('token_hash', sa.String(255), primary_key=True),
+    sa.Column('type', sa.String(255), nullable=False),
+    sa.Column('utc_created_at', sa.Integer, nullable=False),
+    sa.Column('utc_expires_at', sa.Integer, nullable=False),
+
+)
+
+def init_db() -> sa.engine:
+    """Initializes database engine and metadata for use.
+
+    Returns:
+        sa.engine: _description_
+    """
+    metadata.create_all(db)
+    Client = metadata.tables["Client"]
+    Token = metadata.tables["Token"]
+    return db
+
+def write_to_db(db_table: str, attributes: dict) -> bool:
+    """helper function to write to either of our two tables any relevant client or token data
+
+    Args:
+        db_table (str): Which table to write in
+        attributes (dict): dictionary of attributes to write to the table 
+
+    Raises:
+        ValueError: Raised if not valid token type is passed.
+
+    Returns:
+        bool: Return True on success or False on failure
+    """
+    if db_table.lower() not in ("client", "token"):
+        raise ValueError(f"write_to_db: specified table is not valid: {db_table}.")
+    try:
+        with db.begin() as conn:
+            if db_table == "Client": # If client table specified expect dict with client attributes
+                client_id = attributes["client_id"]
+                rows = conn.execute(sa.select(client).where(client.c.client_id == client_id))
+                conn.execute(
+                    sa.insert(client).values(
+                        client_id = attributes["client_id"],
+                        client_secret = attributes["client_secret"],
+                        scope = attributes["scope"],
+                        RealmID = attributes["realm_id"]
+                    )
+                )
+            elif db_table == "Token": # If token table specified expect dict with token attributes and handle token existing
+                token_hash = attributes["token_hash"]
+                token_type = attributes["token_type"]
+                rows = conn.execute(sa.select(token).where(token.c.token_hash == token_hash)).first()
+                utc_now = int(time.time())
+                if token_type == "refresh":
+                    expires_at = utc_now + (86400*90) # refresh tokens last 90 days, so we add amount of seconds equivalent to 90 days.
+                elif token_type == "access":
+                    expires_at = utc_now + (58*60) # access tokens last 1 hour, so we put 58 minutes here to be safe
+                else:
+                    raise ValueError(f"Unsupported token type: {token_type}")
+                if not rows:
+                    statement = sa.insert(token).values(
+                        token_hash = attributes["token_hash"],
+                        type = attributes["token_type"],
+                        utc_created_at=utc_now,
+                        utc_expires_at=expires_at
+                    )
+                else:
+                    statement = (
+                        sa.update(token)
+                        .where(token.c.token_hash == token_hash)
+                        .values(
+                            type=token_type,
+                            utc_created_at=utc_now,
+                            utc_expires_at=expires_at
+                        )
+                    )
+                conn.execute(statement)
+                return True
+    except SQLAlchemyError as e:
+        print_error(e, "write_to_db")
+        return False
+    
+def lookup_db(table: str, type: str, value: str=None) -> bool:
+    """Helper function to lookup data in the database with arguments to specify where to look and for what.
+
+    Args:
+        table (str): Which table to lookup data in
+        type (str): Specify either to find a whole row or a certain attribute or value of a row
+        value (str, optional): The specific value to find in a row. Defaults to None.
+
+    Raises:
+        ValueError: If passed type isn't row or value, raise value error.
+        ValueError: If passed table isn't a valid table, raise value error.
+
+    Returns:
+        bool: Return true on success or false on failure.
+    """
+    if type.lower() not in ("row", "value"):
+        raise ValueError(f"lookup_db: passed type not valid for db lookup: {type}")
+    if table.lower() not in ("token", "client"):
+        raise ValueError(f"lookup_db: passed table not valid for db lookup: {table}")
+    
+    table_object = client if table.lower() == "client" else token
+
+    try:
+        with db.connect() as conn:
+            if value is None:
+                statement = sa.select(table_object)
+            else:
+                statement = sa.select(table_object).where(table_object.c[type] == value)
+            
+            rows = conn.execute(statement).mappings().all()
+            return [dict(r) for r in rows]
+    except SQLAlchemyError as e:
+        print_error(e, "lookup_db")
+        return None
+    
+
+
+if __name__ == "__main__":
+    init_db()
+    
