@@ -26,11 +26,13 @@ Licenses Involved:
 ##############Anything else?##############
 Steps to run:
 
-1. Must map apps.qbparser-testing.test to 127.0.0.1 in your OS DNS config 
+1. Must map apps.qbparser-testing.test to 127.0.0.1 in your OS DNS config
 
-2. If there are no clients in the Clients table, you will be prompted to enter client id client secret and realm id
+2. Use requirements.txt to install needed pip packages for the app with pip install -r requirements.txt  
 
-3. May run into permission issues with some of the crypto files and operations, let me know if you do.
+3. If there are no clients in the Clients table, you will be prompted to enter client id client secret and realm id
+
+4. May run into permission issues with some of the crypto files and operations, let me know if you do.
 
 
 
