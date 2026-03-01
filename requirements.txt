@@ -1,0 +1,7 @@
+intuit-oauth
+cryptography
+python-quickbooks
+SQLAlchemy
+urllib3
+pandas
+numpy

@@ -2,6 +2,9 @@
 # utilities to be used generally
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+import http.server
+from cryptography.fernet import Fernet
+import os
 import ssl, threading, webbrowser
 ########### Deliverable ###########
 HOST = "apps.qbparser-testing.test"
@@ -44,29 +47,70 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"OAuth received. You can close this tab.")
 
             callback_received.set()
-            threading.Thread(target=self.server.shutdown, daemon=True).start()
-
+ 
         def log_message(self, format, *args):
             return
         
-def create_https():
+def create_https() -> None:
     try:
-        httpd = HTTPServer((HOST, PORT), CallbackHandler)
+        httpd = http.server.HTTPServer((HOST, PORT), CallbackHandler)
         #Context object to negotiate highest protocol version that both client and server can use
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ssl_context.check_hostname = False
         #Load private key and certificate
-        ssl_context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
+        ssl_context.load_cert_chain(certfile="keys/cert.pem", keyfile="keys/key.pem", password="Intuit_API")
         #Init ssl socet and specify serer_side behaivor
-        httpd.socket(ssl_context.wrap_socket(httpd.socket, server_side=True))
-        httpd.serve_forever()
-        httpd.server_close()
-        return result
+        httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        if callback_received.wait(timeout=300):
+            httpd.shutdown()
+            httpd.server_close()
+            return result
+        else:
+            httpd.shutdown()
+            httpd.server_close()
+            return None
     except Exception as e:
         print_error(e, "create_https")
         return None
 
+def init_crypto() -> Fernet:
+    """Uses fernet from cyrptography library to create ciphersuite object, where a key can be used
+    to encrypt and decrypt tokens. Key is pulled from env vars, or generated if not found (dev fallback).
 
+    Returns:
+        Fernet: ciphersuite object for encrypting and decrypting tokens. Uses FERNET_KEY from env vars, 
+        or generates a new one if not found (dev fallback).
+    """
+    key = os.environ.get("FERNET_KEY")
+    if key:
+        key = key.encode()
+        return Fernet(key)
+    KEY_PATH = os.path.join(os.path.dirname(__file__), 'keys/fernet.key')
+    try:
+        if os.path.exists(KEY_PATH):
+            with open(KEY_PATH, "rb") as f:
+                    key = f.read().strip()
+        else:
+            os.makedirs(os.path.dirname(KEY_PATH), exist_ok=True)
+            key = Fernet.generate_key()
+            # write then restrict permissions
+            with open(KEY_PATH, "wb") as f:
+                f.write(key)
+            os.chmod(KEY_PATH, 0o600)
+            print("Generated FERNET_KEY and saved to", KEY_PATH)
+        return Fernet(key)
+    except Exception as e:
+        print_error(e, "init_crypto")
+        key = Fernet.generate_key()
+        print("Using ephemeral FERNET_KEY (won't persist across runs)")
+
+def encrypt_token(cipher: Fernet, plaintext: str) -> str:
+    return cipher.encrypt(plaintext.encode()).decode()
+
+def decrypt_token(cipher: Fernet, token_encrypted: str) -> str:
+    return cipher.decrypt(token_encrypted.encode()).decode()
 
 
 #call error with try/except within other functions

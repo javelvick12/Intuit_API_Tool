@@ -1,14 +1,15 @@
 ########### Admin/Import/Etc ###########
 import sqlalchemy as sa
+from sqlalchemy import ForeignKey, event
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import time
 from utilities import print_error
 DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.sqlite')
-#NOTE: This is insecure and will need to be moved to a database after being encyrpted (These tokens are also likely expired).
 ########### Deliverable ###########
 db = sa.create_engine(f'sqlite:///{DB_PATH}')
 metadata = sa.MetaData()
+
 client = sa.Table(
     'Client', metadata,
     sa.Column('client_id', sa.String(255), nullable=False),
@@ -22,6 +23,7 @@ token = sa.Table(
     sa.Column('type', sa.String(255), nullable=False),
     sa.Column('utc_created_at', sa.Integer, nullable=False),
     sa.Column('utc_expires_at', sa.Integer, nullable=False),
+    sa.Column('client_id', sa.String(255), nullable=False)
 
 )
 
@@ -29,7 +31,7 @@ def init_db() -> sa.engine:
     """Initializes database engine and metadata for use.
 
     Returns:
-        sa.engine: _description_
+        sa.engine: Engine object for our database to store and read from
     """
     metadata.create_all(db)
     Client = metadata.tables["Client"]
@@ -61,7 +63,7 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
                         client_id = attributes["client_id"],
                         client_secret = attributes["client_secret"],
                         scope = attributes["scope"],
-                        RealmID = attributes["realm_id"]
+                        RealmID = attributes["RealmID"]
                     )
                 )
             elif db_table == "Token": # If token table specified expect dict with token attributes and handle token existing
@@ -80,7 +82,8 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
                         token_hash = attributes["token_hash"],
                         type = attributes["token_type"],
                         utc_created_at=utc_now,
-                        utc_expires_at=expires_at
+                        utc_expires_at=expires_at,
+                        client_id = attributes["client_id"]
                     )
                 else:
                     statement = (
@@ -89,7 +92,8 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
                         .values(
                             type=token_type,
                             utc_created_at=utc_now,
-                            utc_expires_at=expires_at
+                            utc_expires_at=expires_at,
+                            client_id = attributes["client_id"]
                         )
                     )
                 conn.execute(statement)
@@ -98,7 +102,7 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
         print_error(e, "write_to_db")
         return False
     
-def lookup_db(table: str, type: str, value: str=None) -> bool:
+def lookup_db(table: str, type: str, value: str=None, column: str=None) -> dict:
     """Helper function to lookup data in the database with arguments to specify where to look and for what.
 
     Args:
@@ -123,12 +127,24 @@ def lookup_db(table: str, type: str, value: str=None) -> bool:
     try:
         with db.connect() as conn:
             if value is None:
-                statement = sa.select(table_object)
+               statement = sa.select(table_object)
             else:
-                statement = sa.select(table_object).where(table_object.c[type] == value)
-            
+                statement = sa.select(table_object).where(table_object.c[column] == value)
+
             rows = conn.execute(statement).mappings().all()
             return [dict(r) for r in rows]
+            if table.lower() == "token" and type.lower() == "row":
+                created_col = None
+                statement = sa.select(table_object).order_by(sa.desc("utc_created_at")).first()
+            key_col = column if column is not None else (value if table.lower() == "client" and column is None and type.lower() == "row" and False else None)
+            if key_col is None:
+                key_col = "client_id" if table.lower() == "client" else "token_hash"
+            statement = sa.select(table_object).where(table_object.c[key_col] == value)
+        rows = conn.execute(statement).mappings().all()
+        if not rows:
+            return None
+        return dict(rows[0]) if len(rows) == 1 else [dict(r) for r in rows]
+            
     except SQLAlchemyError as e:
         print_error(e, "lookup_db")
         return None

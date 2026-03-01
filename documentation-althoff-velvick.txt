@@ -1,0 +1,30 @@
+20250210
+    * created an app called testapp-A1
+    * scopped to both payments and Accounting
+    * app details on personal private hub
+    * app ID 
+    * https://developer.intuit.com/app/developer/qbo/docs/get-started/build-your-first-app
+
+20260212 - talked through the game plan. Focus:
+    1 - get hello world .net working
+    2 - set up initial authentication with testapp-1A
+    3 - get profit/loss ytd report
+
+20260215
+    * Proposing that we use sqlite database to store secrets and IDs, but not before encrypting with pbdkf2 encryption.
+    * We can use SQLAlchemy and requests module as similar to Rinku's smartbulb app.
+    *  
+
+
+20260228
+    * Created https mini frontend for api redirects with SSL 
+        * Created ssl certificate and key for https (SSL Password: Intuit_API)
+    * Wrote logic for initializing SQLite table for storing authentication details
+    * Finished Logic for initializing basic OAuth2 connection to Intuit API
+    *Added symmetric encryption for token storage.
+
+20260301
+    *Finishing backend logic for fetching tokens and authorization codes and securely storing them
+    *Successfully connected to Intuit OAuth2 endpoint via their SDK and a mini https server endpoint on our end
+    *Implemented basic AES symmetric encryption of secrets and tokens via Fernet module. 
+    *Basic barebones backend implementation complete. The app can reach out to Intuit, get tokens, and successfully decrypt existing stored tokens and secrets.

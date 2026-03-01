@@ -24,9 +24,14 @@ Licenses Involved:
         License: Apache 2.0
         Author: Intuit Inc
 ##############Anything else?##############
+Steps to run:
+
+1. Must map apps.qbparser-testing.test to 127.0.0.1 in your OS DNS config 
+
+2. If there are no clients in the Clients table, you will be prompted to enter client id client secret and realm id
+
+3. May run into permission issues with some of the crypto files and operations, let me know if you do.
 
 
-20260212 - talked through the game plan. Focus:
-    1 - get hello world .net working
-    2 - set up initial authentication with testapp-1A
-    3 - get profit/loss ytd report
+
+
