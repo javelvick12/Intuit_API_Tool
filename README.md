@@ -30,7 +30,9 @@ Steps to run:
 
 2. If there are no clients in the Clients table, you will be prompted to enter client id client secret and realm id
 
-3. May run into permission issues with some of the crypto files and operations, let me know if you do.
+3. run pip install -r requirements.txt to get all needed packages for the app
+
+4. May run into permission issues with some of the crypto files and operations, let me know if you do.
 
 
 
