@@ -6,6 +6,7 @@ import http.server
 from cryptography.fernet import Fernet
 import os
 import ssl, threading, webbrowser
+
 ########### Deliverable ###########
 HOST = "apps.qbparser-testing.test"
 PORT = 8443
@@ -24,6 +25,7 @@ def open_url(url: str) -> bool:
         return webbrowser.open_new_tab(url)
     except Exception:
         return False
+    
 result = {"callback_url": None, "code": None, "state": None, "realmId": None}
 callback_received = threading.Event()
 class CallbackHandler(BaseHTTPRequestHandler):
@@ -51,7 +53,21 @@ class CallbackHandler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):
             return
         
-def create_https() -> None:
+def create_https() -> dict | None:
+    """
+    Function creates a secure https connection
+
+    Args:
+        None
+
+    Returns:
+        (dict) if successful a secure connection
+        (None) if an error for failure
+    """
+    #resets connection logic for the connection and values
+    callback_received.clear()
+    result.update({"callback_url": None, "code": None, "state": None, "realmId": None, })
+    #attempt to set up connection
     try:
         httpd = http.server.HTTPServer((HOST, PORT), CallbackHandler)
         #Context object to negotiate highest protocol version that both client and server can use
@@ -59,7 +75,7 @@ def create_https() -> None:
         ssl_context.check_hostname = False
         #Load private key and certificate
         ssl_context.load_cert_chain(certfile="keys/cert.pem", keyfile="keys/key.pem", password="Intuit_API")
-        #Init ssl socet and specify serer_side behaivor
+        #Init ssl socet and specify server_side behaivor
         httpd.socket = ssl_context.wrap_socket(httpd.socket, server_side=True)
         thread = threading.Thread(target=httpd.serve_forever, daemon=True)
         thread.start()
@@ -76,7 +92,8 @@ def create_https() -> None:
         return None
 
 def init_crypto() -> Fernet:
-    """Uses fernet from cyrptography library to create ciphersuite object, where a key can be used
+    """
+    Uses fernet from cyrptography library to create ciphersuite object, where a key can be used
     to encrypt and decrypt tokens. Key is pulled from env vars, or generated if not found (dev fallback).
 
     Returns:
@@ -111,19 +128,6 @@ def encrypt_token(cipher: Fernet, plaintext: str) -> str:
 
 def decrypt_token(cipher: Fernet, token_encrypted: str) -> str:
     return cipher.decrypt(token_encrypted.encode()).decode()
-
-
-#call error with try/except within other functions
-#def function():
-#     """
-#    Words.
-#     """
-#     try:
-#   	<logic>
-#     except Exception as e:
-#         print_error(e, f="<function name>")
-#         return None
-
 
 ########### Main ###########
 

@@ -1,7 +1,8 @@
-intuit-oauth
-cryptography
-python-quickbooks
-SQLAlchemy
-urllib3
-pandas
-numpy
+#pinned versions  as of 20260302:
+intuit-oauth==1.2.6
+python-quickbooks==0.9.12
+cryptography==46.0.1
+SQLAlchemy==2.0.45
+urllib3==2.6.3
+pandas==2.3.3
+numpy==2.3.5

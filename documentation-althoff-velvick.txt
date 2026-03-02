@@ -28,3 +28,12 @@
     *Successfully connected to Intuit OAuth2 endpoint via their SDK and a mini https server endpoint on our end
     *Implemented basic AES symmetric encryption of secrets and tokens via Fernet module. 
     *Basic barebones backend implementation complete. The app can reach out to Intuit, get tokens, and successfully decrypt existing stored tokens and secrets.
+
+20260302
+    *reviewed all the updates and code. 
+    *tweaked documentation strings
+    *added some dynamic feedback on the authentication error for lack of input
+    *updated the readme section on steps
+    *locked in versions on the requirements.txt
+    *added some content to main after I ran it (console returns of whats going on and if it was successful or not)
+    ! I see my user and tokens in the local DB. I want to talk about what the next steps are. 
