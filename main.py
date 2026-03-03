@@ -4,18 +4,27 @@ from authentication import *
 import data_management as dm
 from user_management import *
 from quickbooks import QuickBooks
-from utilities import print_error, init_crypto
+from utilities import print_error, init_crypto #DEBUG inconsistent - also why ut.fx V just ut all? 
 ########### Deliverable ###########
 
-def refresh_call(auth_client, refresh_token):
+def refresh_call(auth_client, refresh_token) -> str:
+    """
+    Function to refresh OAuth token during active session(s).
+
+    Args:
+        auth_client (obj) - the authorization client 
+        refresh_token (obj) - the refresh token, which will be replaced.
+
+    Return:
+        new_token (str) - to keep sessions functioning
+        None - if error
+    """
     try:
         new_token = auth_client.refresh(refresh_token)
         return new_token
     except ValueError as e:
         print_error(e, f="Refresh Call")
         return None
-
-
 
 ########### Main ###########
 def main():

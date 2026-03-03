@@ -4,7 +4,7 @@ from sqlalchemy import ForeignKey, event
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import time
-from utilities import print_error
+from utilities import print_error #DEBUG inconsistent - also why ut.fx V just ut all? 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.sqlite')
 
 ########### Deliverable ###########
@@ -137,6 +137,7 @@ def lookup_db(table: str, type: str, value: str=None, column: str=None) -> dict:
 
             rows = conn.execute(statement).mappings().all()
             return [dict(r) for r in rows]
+        #DEBUGU below is dead...
             if table.lower() == "token" and type.lower() == "row":
                 created_col = None
                 statement = sa.select(table_object).order_by(sa.desc("utc_created_at")).first()

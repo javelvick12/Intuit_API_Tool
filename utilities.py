@@ -12,7 +12,7 @@ HOST = "apps.qbparser-testing.test"
 PORT = 8443
 REDIRECT_URI = f"https://{HOST}:{PORT}/callback"
 #super helpful basic/standrad error code function
-def print_error(e, f="UNKNOWN"):
+def print_error(e, f="UNKNOWN") -> None:
     """
     Helpful basic/standrad error code function. Called withing code via a try and except block.
     """
@@ -21,13 +21,21 @@ def print_error(e, f="UNKNOWN"):
     print(type(e))
 
 def open_url(url: str) -> bool:
+    """
+    Helper function to open a default browser and the argument url
+
+    Args:
+        url (str) - provided url to open
+    """
     try:
         return webbrowser.open_new_tab(url)
     except Exception:
         return False
     
+# required elements for class instances. 
 result = {"callback_url": None, "code": None, "state": None, "realmId": None}
 callback_received = threading.Event()
+
 class CallbackHandler(BaseHTTPRequestHandler):
         def do_GET(self):
             parsed = urlparse(self.path)
@@ -91,7 +99,7 @@ def create_https() -> dict | None:
         print_error(e, "create_https")
         return None
 
-def init_crypto() -> Fernet:
+def init_crypto() -> Fernet | None:
     """
     Uses fernet from cyrptography library to create ciphersuite object, where a key can be used
     to encrypt and decrypt tokens. Key is pulled from env vars, or generated if not found (dev fallback).
@@ -99,6 +107,7 @@ def init_crypto() -> Fernet:
     Returns:
         Fernet: ciphersuite object for encrypting and decrypting tokens. Uses FERNET_KEY from env vars, 
         or generates a new one if not found (dev fallback).
+        None: if error. 
     """
     key = os.environ.get("FERNET_KEY")
     if key:
@@ -122,6 +131,7 @@ def init_crypto() -> Fernet:
         print_error(e, "init_crypto")
         key = Fernet.generate_key()
         print("Using ephemeral FERNET_KEY (won't persist across runs)")
+        return None
 
 def encrypt_token(cipher: Fernet, plaintext: str) -> str:
     return cipher.encrypt(plaintext.encode()).decode()
