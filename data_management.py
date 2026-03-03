@@ -6,6 +6,7 @@ import os
 import time
 from utilities import print_error
 DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.sqlite')
+
 ########### Deliverable ###########
 db = sa.create_engine(f'sqlite:///{DB_PATH}')
 metadata = sa.MetaData()
@@ -28,10 +29,11 @@ token = sa.Table(
 )
 
 def init_db() -> sa.engine:
-    """Initializes database engine and metadata for use.
-
+    """
+    Initializes database engine and metadata for use.
+  
     Returns:
-        sa.engine: Engine object for our database to store and read from
+        sa.engine: Engine object for database to store and read from
     """
     metadata.create_all(db)
     Client = metadata.tables["Client"]
@@ -39,7 +41,8 @@ def init_db() -> sa.engine:
     return db
 
 def write_to_db(db_table: str, attributes: dict) -> bool:
-    """helper function to write to either of our two tables any relevant client or token data
+    """
+    Helper function to write to either of our two tables any relevant client or token data
 
     Args:
         db_table (str): Which table to write in
@@ -103,7 +106,8 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
         return False
     
 def lookup_db(table: str, type: str, value: str=None, column: str=None) -> dict:
-    """Helper function to lookup data in the database with arguments to specify where to look and for what.
+    """
+    Helper function to lookup data in the database with arguments to specify where to look and for what.
 
     Args:
         table (str): Which table to lookup data in

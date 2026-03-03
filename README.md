@@ -1,8 +1,11 @@
 # Intuit_API_Tool
 Final project for COMP 4705 by Jason Velvick and Jerome Althoff. This terminal based tool is a python program that interacts with the Intuit developer API to fetch data of interest from QuickBooks Online. 
 Python Libraries Used:
-python-quickbooks 0.9.12
-intuit-oauth 1.2.6
+    python-quickbooks 0.9.12
+    intuit-oauth 1.2.6
+    intuit-oauth
+    .Net Framework 4.6.1
+    Microsoft.Net.Compilers 2.10.0
 
 Purpose:
     ##############words##############
@@ -30,10 +33,23 @@ Steps to run:
 
 2. If there are no clients in the Clients table, you will be prompted to enter client id client secret and realm id
 
-3. run pip install -r requirements.txt to get all needed packages for the app
+3. Create and use a Virtual Environemnt
+    Create:
+        $ python3 -m venv <name of virtual environement, example IntuitVenv>
+        $ python3 -m venv IntuitVenv 
+    Use (from project root):
+        ┌──(user㉿machine)-[project path]
+        └─$ source IntuitVenv/bin/activate  
 
-4. May run into permission issues with some of the crypto files and operations, let me know if you do.
+4. Get required packages
+    Run:
+        $ pip install -r requirements.txt 
+    Update as required: 
+        $ pip update -r requirements.txt
 
+5. May run into permission issues with some of the crypto files and operations, let me know if you do.
 
-
+6. Stop virtual environment from within the virtual environment:
+    ┌──(IntuitVenv)─(user㉿machine)-[project path]
+    └─$ deactivate
 
