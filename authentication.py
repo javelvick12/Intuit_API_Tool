@@ -4,8 +4,8 @@ from intuitlib.client import AuthClient
 from intuitlib.exceptions import AuthClientError
 from intuitlib.enums import Scopes
 from quickbooks import *
-from cryptography.fernet import Fernet #DEBUG
-import utilities as ut
+from cryptography.fernet import Fernet 
+import connection_management as cm  
 #from intuitlib.oath.scopes import Scopes
 import data_management as dm
 BASE_URL = "https://sandbox-quickbooks.api.intuit.com"
@@ -27,16 +27,15 @@ class Intuit_API():
             auth_client = AuthClient(
                 client_id=self.client_id,
                 client_secret=self.client_secret,
-                redirect_uri=ut.REDIRECT_URI, 
+                redirect_uri=cm.REDIRECT_URI, 
                 environment=ENV
             )
             return auth_client
         except AuthClientError as e:
-            ut.print_error(e, "establish_client")
+            cm.print_error(e, "establish_client")
             return None
 
 ########### Main ###########
-#def authenticate(db: dm.sa.engine, crypto: dm.Fernet): DEBUG
 def authenticate(db: dm.sa.engine, crypto: Fernet):
     """
     Autehtnication logic. 
@@ -62,7 +61,7 @@ def authenticate(db: dm.sa.engine, crypto: Fernet):
         else:
             client_id = client[0]["client_id"]
             client_secret_cipher = client[0]["client_secret"]
-            client_secret = ut.decrypt_token(crypto, client_secret_cipher)
+            client_secret = cm.decrypt_token(crypto, client_secret_cipher)
             realm_id = client[0]["RealmID"]
         API = Intuit_API(client_id, client_secret, realm_id, BASE_URL, db)
         auth_client = API.auth_client
@@ -70,8 +69,8 @@ def authenticate(db: dm.sa.engine, crypto: Fernet):
             return None
         auth_url = auth_client.get_authorization_url([Scopes.ACCOUNTING]) # Fetches auth url bsed on auth_client object
         print("navigating to auth url:", auth_url)
-        ut.open_url(auth_url) #Opens user browser to authenticate with Intuit
-        callback = ut.create_https()
+        cm.open_url(auth_url) #Opens user browser to authenticate with Intuit
+        callback = cm.create_https()
         if not callback:
             raise RuntimeError("No callback received from HTTPS server.")
         auth_code = callback.get("code")
@@ -79,15 +78,15 @@ def authenticate(db: dm.sa.engine, crypto: Fernet):
         if not auth_code or not realm_id:
             raise RuntimeError("Missing id or code in callback.")
         auth_client.get_bearer_token(auth_code=auth_code, realm_id=realm_id)
-        encrypted_access_token = ut.encrypt_token(crypto, auth_client.access_token)
-        encrypted_refresh_token = ut.encrypt_token(crypto, auth_client.refresh_token)
+        encrypted_access_token = cm.encrypt_token(crypto, auth_client.access_token)
+        encrypted_refresh_token = cm.encrypt_token(crypto, auth_client.refresh_token)
         access_to_write = {"token_hash": encrypted_access_token, "token_type": "access", "client_id": auth_client.client_id}
         dm.write_to_db("Token", access_to_write)
         refresh_to_write = {"token_hash": encrypted_refresh_token, "token_type": "refresh", "client_id": auth_client.client_id}
         dm.write_to_db("Token", refresh_to_write)
         return API, auth_client, realm_id
     except Exception as e:
-        ut.print_error(e, "authenticate")
+        cm.print_error(e, "authenticate")
         return None
 
 if __name__ == '__main__':

@@ -37,3 +37,13 @@
     *locked in versions on the requirements.txt
     *added some content to main after I ran it (console returns of whats going on and if it was successful or not)
     ! I see my user and tokens in the local DB. I want to talk about what the next steps are. 
+
+20260303
+    * error print to conolse to clean up 
+    "tempting validation of user via Intuit
+Error in authenticate!
+HTTPSConnectionPool(host='developer.intuit.com', port=443): Max retries exceeded with url: /.well-known/openid_sandbox_configuration/ (Caused by NameResolutionError("HTTPSConnection(host='developer.intuit.com', port=443): Failed to resolve 'developer.intuit.com' ([Errno -3] Temporary failure in name resolution)"))
+<class 'requests.exceptions.ConnectionError'>
+Authentication Failed"
+    
+            

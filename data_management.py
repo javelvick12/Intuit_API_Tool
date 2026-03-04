@@ -4,7 +4,7 @@ from sqlalchemy import ForeignKey, event
 from sqlalchemy.exc import SQLAlchemyError
 import os
 import time
-from utilities import print_error #DEBUG inconsistent - also why ut.fx V just ut all? 
+import utilities as ut
 DB_PATH = os.path.join(os.path.dirname(__file__), 'oauth2data.sqlite')
 
 ########### Deliverable ###########
@@ -102,7 +102,7 @@ def write_to_db(db_table: str, attributes: dict) -> bool:
                 conn.execute(statement)
                 return True
     except SQLAlchemyError as e:
-        print_error(e, "write_to_db")
+        ut.print_error(e, "write_to_db")
         return False
     
 def lookup_db(table: str, type: str, value: str=None, column: str=None) -> dict:
@@ -151,7 +151,7 @@ def lookup_db(table: str, type: str, value: str=None, column: str=None) -> dict:
         return dict(rows[0]) if len(rows) == 1 else [dict(r) for r in rows]
             
     except SQLAlchemyError as e:
-        print_error(e, "lookup_db")
+        ut.print_error(e, "lookup_db")
         return None
     
 
